@@ -8,4 +8,9 @@ class QuotesSpider(scrapy.Spider):
     start_urls = ['http://quotes.toscrape.com/']
 
     def parse(self, response):
-        pass
+        for block_quote in response.xpath("//*[@class='quote']"):
+            yield {
+                "text": block_quote.xpath(".//*[@class='text']/text()").extract_first(),
+                "author": block_quote.xpath(".//*[@class='author']/text()").extract_first(),
+                "tags": block_quote.xpath(".//*[@class='tag']/text()").extract(),
+            }
