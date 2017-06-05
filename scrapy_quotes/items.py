@@ -11,8 +11,3 @@ from scrapy.item import Item, Field
 class ScrapyQuotesItem(Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
-    tags = Field()
-    text = Field()
-    author = Field()
-    born = Field()
-    description = Field()

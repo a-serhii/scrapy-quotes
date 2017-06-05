@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from scrapy import Spider
 from scrapy.http import Request
-from scrapy_quotes.items import ScrapyQuotesItem
 
 
 class QuotesSpider(Spider):
@@ -11,33 +10,32 @@ class QuotesSpider(Spider):
 
     def parse(self, response):
         for block_quote in response.xpath("//*[@class='quote']"):
-            item = ScrapyQuotesItem()
-            request = Request(response.urljoin(block_quote.xpath(
-                ".//span/a/@href").extract_first()),
-                callback=self.parse_author_page)
-            item["tags"] = block_quote.xpath(
+            url_author_page = response.urljoin(block_quote.xpath(
+                ".//span/a/@href").extract_first())
+            tags = block_quote.xpath(
                 ".//*[@class='tag']/text()").extract()
-            item["text"] = block_quote.xpath(
+            text = block_quote.xpath(
                 ".//*[@class='text']/text()").extract_first()
-            item["author"] = block_quote.xpath(
+            author = block_quote.xpath(
                 ".//*[@class='author']/text()").extract_first()
-            yield item, request
-            # yield {
-            #     "tags": block_quote.xpath(
-            #         ".//*[@class='tag']/text()").extract(),
-            #     "text": block_quote.xpath(
-            #         ".//*[@class='text']/text()").extract_first(),
-            #     "author": block_quote.xpath(
-            #         ".//*[@class='author']/text()").extract_first(),
-            #     "born": data,
-            #     "description": "pass",
-            # }
+            yield Request(url=url_author_page,
+                          meta={'tags': tags,
+                                'text': text,
+                                "author": author},
+                          callback=self.parse_author_page)
         next_page = response.urljoin(response.xpath(
             "//*[@class='next']/a/@href").extract_first())
         yield Request(next_page)
 
     def parse_author_page(self, response):
-        item = ScrapyQuotesItem()
-        item["born"] = ' '.join(response.xpath(
+        born = ' '.join(response.xpath(
             "//*[@class='author-born-date' or @class='author-born-location']//text()").extract())
-        yield item
+        description = response.xpath(
+            "//*[@class='author-description']//text()").extract_first().strip()
+        yield{
+            'tags': response.meta['tags'],
+            'text': response.meta['text'],
+            'author': response.meta['author'],
+            'born': born,
+            "description": description
+        }
